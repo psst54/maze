@@ -29,7 +29,10 @@ queue<pair<int, int> > q;
 //------------미로 생성에 필요한 함수들------------//
 void printMazeToFile();				// 출력 확인용 함수이다
 void printMazeToScreen();			// 출력 확인용 함수이다
-void saveMazeToChar();
+void saveMazeToChar();				// saveMazeToCharWithNum의 이전 버전이다
+char getDirNum();					// saveMazeToCharWithNum에서 저장할 숫자를 불러오는 함수이다
+void saveMazeToCharWithNum();
+
 
 bool check4Dir(int x, int y, bool v);
 bool check1Dir(int x, int y, int direction, bool v);
@@ -140,6 +143,63 @@ void saveMazeToChar()
 				mazeTxt[i * 2][j * 2 - 1] = '-';
 			else
 				mazeTxt[i * 2][j * 2 - 1] = ' ';
+		}
+	}
+
+
+	/*printf("\n\n");
+	for (int i = 0; i < HEIGHT * 2 + 1; i++) {
+		for (int j = 0; j < WIDTH * 2 + 1; j++) {
+			printf("%c", mazeTxt[i][j]);
+		}
+		printf("\n");
+	}*/
+}
+
+char getDirNum(int tX, int tY)
+{
+	int dx[8] = { -1, -1, -1, 0, 0, 1, 1, 1 },
+		dy[8] = { -1, 0, 1, -1, 1, -1, 0, 1 };
+	char cnt = 0;
+
+	for (int i = 0; i < 8; i++) {
+		if (mazeTxt[tY + dy[i]][tX + dx[i]] != '|' && 
+			mazeTxt[tY + dy[i]][tX + dx[i]] != '-' && 
+			mazeTxt[tY + dy[i]][tX + dx[i]] != '+')
+			cnt++;
+	}
+
+	return cnt;
+}
+
+void saveMazeToCharWithNum()
+{
+	mazeTxt[0][0] = '+';
+	for (int i = 1; i <= WIDTH; i++) {
+		mazeTxt[0][i * 2 - 1] = '-';
+		mazeTxt[0][i * 2] = '+';
+	}
+
+	for (int i = 1; i <= HEIGHT; i++) {
+
+		mazeTxt[i * 2 - 1][0] = '|';
+		for (int j = 1; j <= WIDTH; j++) {
+			mazeTxt[i * 2 - 1][j * 2 - 1] = getDirNum(j * 2 - 1, i * 2 - 1) + 48;
+
+			if (mazeInfo[i - 1][j - 1].right)
+				mazeTxt[i * 2 - 1][j * 2] = '|';
+			else
+				mazeTxt[i * 2 - 1][j * 2] = getDirNum(j * 2, i * 2 - 1) + 48;
+		}
+
+		mazeTxt[i * 2][0] = '+';
+		for (int j = 1; j <= WIDTH; j++) {
+			mazeTxt[i * 2][j * 2] = '+';
+
+			if (mazeInfo[i - 1][j - 1].down)
+				mazeTxt[i * 2][j * 2 - 1] = '-';
+			else
+				mazeTxt[i * 2][j * 2 - 1] = getDirNum(j * 2 - 1, i * 2) + 48;
 		}
 	}
 
@@ -285,5 +345,6 @@ void generateMaze() {
 
 	//printMazeToFile();
 	//printMazeToScreen();
-	saveMazeToChar();
+	//saveMazeToChar();
+	saveMazeToCharWithNum();
 }
