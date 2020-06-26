@@ -1,4 +1,5 @@
 #include "ofApp.h"
+#include "mazeGenerator.h"
 
 //--------------------------------------------------------------
 void ofApp::setup(){
