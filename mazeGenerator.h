@@ -16,26 +16,27 @@ typedef struct _cell {
 	bool down;		// 벽이 없는 경우 false
 	bool visited;	// 방문한 경우 true
 } cell;
-cell **arr;
+cell **mazeInfo;
+char mazeTxt[500][500];
 
 int dx[4] = { -1, 0, 1, 0 }, dy[4] = { 0, -1, 0, 1 }; // left up right down
-int n, m; // n : 가로 m : 세로
+int WIDTH, HEIGHT; // n : 가로 m : 세로
 queue<pair<int, int> > q;
 
 #endif
 
 
 //------------미로 생성에 필요한 함수들------------//
-void printMazeToFile();
-void printMazeToScreen();
+void printMazeToFile();				// 출력 확인용 함수이다
+void printMazeToScreen();			// 출력 확인용 함수이다
+void saveMazeToChar();
 
 bool check4Dir(int x, int y, bool v);
 bool check1Dir(int x, int y, int direction, bool v);
-
 void breakWall(int x, int y, int dir);
+
 void walk();
 bool hunt();
-
 void generateMaze();
 
 
@@ -50,14 +51,14 @@ void printMazeToFile()
 	}
 	else {
 		writeFile << "+";
-		for (int i = 0; i < n; i++) {
+		for (int i = 0; i < WIDTH; i++) {
 			writeFile << "-+";
 		}
 		writeFile << "\n";
-		for (int i = 0; i < m; i++) {
+		for (int i = 0; i < HEIGHT; i++) {
 			writeFile << "|";
-			for (int j = 0; j < n; j++) {
-				if (arr[i][j].right)
+			for (int j = 0; j < WIDTH; j++) {
+				if (mazeInfo[i][j].right)
 					writeFile << " |";
 				else
 					writeFile << "  ";
@@ -66,8 +67,8 @@ void printMazeToFile()
 			writeFile << "\n";
 
 			writeFile << "+";
-			for (int j = 0; j < n; j++) {
-				if (arr[i][j].down)
+			for (int j = 0; j < WIDTH; j++) {
+				if (mazeInfo[i][j].down)
 					writeFile << "-+";
 				else
 					writeFile << " +";
@@ -83,14 +84,14 @@ void printMazeToFile()
 void printMazeToScreen()
 {
 	printf("+");
-	for (int i = 0; i < n; i++) {
+	for (int i = 0; i < WIDTH; i++) {
 		printf("-+");
 	}
 	printf("\n");
-	for (int i = 0; i < m; i++) {
+	for (int i = 0; i < HEIGHT; i++) {
 		printf("|");
-		for (int j = 0; j < n; j++) {
-			if (arr[i][j].right)
+		for (int j = 0; j < WIDTH; j++) {
+			if (mazeInfo[i][j].right)
 				printf(" |");
 			else
 				printf("  ");
@@ -99,8 +100,8 @@ void printMazeToScreen()
 		printf("\n");
 
 		printf("+");
-		for (int j = 0; j < n; j++) {
-			if (arr[i][j].down)
+		for (int j = 0; j < WIDTH; j++) {
+			if (mazeInfo[i][j].down)
 				printf("-+");
 			else
 				printf(" +");
@@ -111,15 +112,56 @@ void printMazeToScreen()
 	printf("\n");
 }
 
+void saveMazeToChar()
+{
+	mazeTxt[0][0] = '+';
+	for (int i = 1; i <= WIDTH; i++) {
+		mazeTxt[0][i * 2 - 1] = '-';
+		mazeTxt[0][i * 2] = '+';
+	}
+	
+	for (int i = 1; i <= HEIGHT; i++) {
+
+		mazeTxt[i * 2 - 1][0] = '|';
+		for (int j = 1; j <= WIDTH; j++) {
+			mazeTxt[i * 2 - 1][j * 2 - 1] = ' ';
+
+			if (mazeInfo[i - 1][j - 1].right)
+				mazeTxt[i * 2 - 1][j * 2] = '|';
+			else
+				mazeTxt[i * 2 - 1][j * 2] = ' ';
+		}
+
+		mazeTxt[i * 2][0] = '+';
+		for (int j = 1; j <= WIDTH; j++) {
+			mazeTxt[i * 2][j * 2] = '+';
+
+			if (mazeInfo[i - 1][j - 1].down)
+				mazeTxt[i * 2][j * 2 - 1] = '-';
+			else
+				mazeTxt[i * 2][j * 2 - 1] = ' ';
+		}
+	}
+
+
+	/*printf("\n\n");
+	for (int i = 0; i < HEIGHT * 2 + 1; i++) {
+		for (int j = 0; j < WIDTH * 2 + 1; j++) {
+			printf("%c", mazeTxt[i][j]);
+		}
+		printf("\n");
+	}*/
+}
+
 
 
 bool check4Dir(int x, int y, bool v)
 {
 	int chk = 0;
 	for (int i = 0; i < 4; i++) {
-		if (x + dx[i] < 0 || x + dx[i] >= n
-			|| y + dy[i] < 0 || y + dy[i] >= m
-			|| arr[y + dy[i]][x + dx[i]].visited == v)
+		if (x + dx[i] < 0 || x + dx[i] >= WIDTH
+			|| y + dy[i] < 0 || y + dy[i] >= HEIGHT
+			|| mazeInfo[y + dy[i]][x + dx[i]].visited == v)
 			continue;
 		chk++;
 	}
@@ -130,39 +172,39 @@ bool check4Dir(int x, int y, bool v)
 
 bool check1Dir(int x, int y, int direction, bool v)
 {
-	if (x < 0 || x >= n || y < 0 || y >= m || arr[y][x].visited == v)
+	if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT || mazeInfo[y][x].visited == v)
 		return false;
 	return true;
 }
 
 void breakWall(int x, int y, int dir)
 {
-	arr[y][x].visited = true;
+	mazeInfo[y][x].visited = true;
 	if (dir == 0) {
-		arr[y][x].left = false;
+		mazeInfo[y][x].left = false;
 		x += dx[dir];
 		y += dy[dir];
-		arr[y][x].right = false;
+		mazeInfo[y][x].right = false;
 	}
 	else if (dir == 1) {
-		arr[y][x].up = false;
+		mazeInfo[y][x].up = false;
 		x += dx[dir];
 		y += dy[dir];
-		arr[y][x].down = false;
+		mazeInfo[y][x].down = false;
 	}
 	else if (dir == 2) {
-		arr[y][x].right = false;
+		mazeInfo[y][x].right = false;
 		x += dx[dir];
 		y += dy[dir];
-		arr[y][x].left = false;
+		mazeInfo[y][x].left = false;
 	}
 	else if (dir == 3) {
-		arr[y][x].down = false;
+		mazeInfo[y][x].down = false;
 		x += dx[dir];
 		y += dy[dir];
-		arr[y][x].up = false;
+		mazeInfo[y][x].up = false;
 	}
-	arr[y][x].visited = true;
+	mazeInfo[y][x].visited = true;
 
 	///////////////////////////////////// ****queue의 push가 일어나는곳****
 	q.push(make_pair(x, y));
@@ -176,7 +218,7 @@ void walk()
 	int y = q.front().second;
 	/////////////////////////////////////****queue의 pop이 일어나는곳****
 	q.pop();
-	arr[y][x].visited = true;
+	mazeInfo[y][x].visited = true;
 
 	if (!check4Dir(x, y, true))	// 더이상 움직일 수 없다면 함수를 마친다
 		return;
@@ -193,9 +235,9 @@ bool hunt()
 	/*
 	아직 방문하지 않고 && 근처에 방문한 적이 있는 칸을 찾는다.
 	*/
-	for (int y = 0; y < m; y++) {
-		for (int x = 0; x < n; x++) {
-			if (!arr[y][x].visited && check4Dir(x, y, false)) {
+	for (int y = 0; y < HEIGHT; y++) {
+		for (int x = 0; x < WIDTH; x++) {
+			if (!mazeInfo[y][x].visited && check4Dir(x, y, false)) {
 				int dir = rand() % 4;
 				while (!check1Dir(x + dx[dir], y + dy[dir], dir, false)) // 움질일 수 없는경우 재생성
 					dir = rand() % 4;
@@ -212,26 +254,26 @@ bool hunt()
 void generateMaze() {
 	srand(time(NULL));
 
-	cout << "HEIGHT : ";
-	cin >> n;
 	cout << "WIDTH : ";
-	cin >> m;
+	cin >> WIDTH;
+	cout << "HEIGHT : ";
+	cin >> HEIGHT;
 
-	arr = (cell**)malloc(sizeof(cell*) * m);
-	for (int i = 0; i < m; i++) {
-		arr[i] = (cell*)malloc(sizeof(cell) * n);
-		for (int j = 0; j < n; j++) {
-			arr[i][j].left = true;
-			arr[i][j].up = true;
-			arr[i][j].right = true;
-			arr[i][j].down = true;
-			arr[i][j].visited = false;
+	mazeInfo = (cell**)malloc(sizeof(cell*) * HEIGHT);
+	for (int i = 0; i < HEIGHT; i++) {
+		mazeInfo[i] = (cell*)malloc(sizeof(cell) * WIDTH);
+		for (int j = 0; j < WIDTH; j++) {
+			mazeInfo[i][j].left = true;
+			mazeInfo[i][j].up = true;
+			mazeInfo[i][j].right = true;
+			mazeInfo[i][j].down = true;
+			mazeInfo[i][j].visited = false;
 		}
 	}
 
 
-	int startX = rand() % n;
-	int startY = rand() % m;
+	int startX = rand() % WIDTH;
+	int startY = rand() % HEIGHT;
 	// 미로 생성을 시작할 지점을 랜덤으로 지정한다
 	q.push(make_pair(startX, startY));
 
@@ -241,6 +283,7 @@ void generateMaze() {
 	} while (hunt());		// 아직 방문하지 않은 곳이 있는지 찾는다
 
 
-	printMazeToFile();
-	printMazeToScreen();
+	//printMazeToFile();
+	//printMazeToScreen();
+	saveMazeToChar();
 }
