@@ -9,6 +9,7 @@ typedef struct _cell {
 	// 벽이 없는 경우 false
 	bool visited;	
 	// 방문한 경우 true
+	int num;
 } cell;
 
 // 미로 생성에 필요한 구조체이다. 각 칸의 상하좌우에 벽이 있는지, 방문한 칸인지를 저장한다
@@ -20,7 +21,7 @@ char mazeTxt[70][70];
 int dx[4] = { -1, 0, 1, 0 }, dy[4] = { 0, -1, 0, 1 }; 
 //미로의 가로, 세로 칸 수이다
 int WIDTH, HEIGHT;
-// 미로 생성에서 사용되는 큐이다
+// 미로 생성, bfs에서 사용되는 큐이다
 queue<pair<int, int> > q;
 
 
@@ -278,8 +279,25 @@ void ofApp::walk()
 	q.pop();
 	mazeInfo[y][x].visited = true;
 
-	if (!check4Dir(x, y, true))	// 더이상 움직일 수 없다면 함수를 마친다
+	if (!check4Dir(x, y, true)) {// 더이상 움직일 수 없다면 함수를 마친다
+		if (x + dx[0] >= 0 && mazeInfo[y][x].left) {// 왼쪽 방향으로 루프를 만들 수 있다면 그렇게 한다
+			breakWall(x, y, 0);
+			return;
+		}
+		if (y + dy[1] >= 0 && mazeInfo[y][x].up) {// 왼쪽 방향으로 루프를 만들 수 있다면 그렇게 한다
+			breakWall(x, y, 1);
+			return;
+		}
+		if (x + dx[2] < WIDTH && mazeInfo[y][x].right) {// 왼쪽 방향으로 루프를 만들 수 있다면 그렇게 한다
+			breakWall(x, y, 2);
+			return;
+		}
+		if (y + dy[3] < HEIGHT && mazeInfo[y][x].down) {// 왼쪽 방향으로 루프를 만들 수 있다면 그렇게 한다
+			breakWall(x, y, 3);
+			return;
+		}
 		return;
+	}
 
 	int dir = rand() % 4;
 	while (!check1Dir(x + dx[dir], y + dy[dir], dir, true)) // 움질일 수 없는경우 재생성
@@ -423,59 +441,71 @@ void Ant::drawAnt(int size, int margin)
 //--------------장애물을 이동시키는 함수이다-------------//
 void Ant::moveAnt()
 {
-	// 장애물은 dfs의 결과값을 이용해 플레이어 방향으로 이동한다
-	ant.dfs();
-	// stack[0]에는 현재 장애물의 좌표가 저장되어 있으므로,
-	// stack[1]에 있는 좌표값으로 이동한다.
-	curX = stack[1][0];
-	curY = stack[1][1];
+	// 장애물은 bfs의 결과값을 이용해 플레이어 방향으로 이동한다
+	ant.bfs();
+
+	// bfs 함수에서 기록해놓은 방문 순서를 거꾸로 따라가면서 다음 칸을 결정한다
+	int nextX = player.curX, nextY = player.curY;
+	while (1) {
+		for (int i = 0; i < 4; i++) {
+			if (mazeTxt[nextY + dy[i]][nextX + dx[i]] != ' ')
+				continue;
+			if (visitNum[nextY + dy[i]][nextX + dx[i]] != visitNum[nextY][nextX] - 1)
+				continue;
+
+			nextX += dx[i];
+			nextY += dy[i];
+			break;
+		}
+
+		if (visitNum[nextY][nextX] == 1)
+			break;
+	}
+	curX = nextX;
+	curY = nextY;
+	
 }
 
 //--------------장애물이 이동할 경로를 찾는 함수이다-------------//
-void Ant::dfs()
+void Ant::bfs()
 {
-	//-------스택과 미로의 방문 정보를 초기화한다
+	//-------큐와 미로의 방문 정보를 초기화한다
 	for (int i = 0; i < HEIGHT * 2 + 1; i++) {
 		for (int j = 0; j < WIDTH * 2 + 1; j++) {
-			visited[i][j] = false;
+			visitNum[i][j] = 0;
 		}
 	}
-	int top = -1;
-	//-------초기화
+	while (!q.empty())
+		q.pop();
+	//-------------------------------------
 
 	int maze_x = ant.curX, maze_y = ant.curY;
-
-	stack[++top][0] = maze_x;
-	stack[top][1] = maze_y;
+	q.push(make_pair(maze_x, maze_y));
 
 	while (1) {
-		maze_x = stack[top][0];
-		maze_y = stack[top][1];
+		maze_x = q.front().first;
+		maze_y = q.front().second;
 		visited[maze_y][maze_x] = true;
+		q.pop();
 
-		// 플레이어의 위치까지 도달했다면 dfs를 마친다
-		if (maze_x == player.curX && maze_y == player.curY)			
+		// 플레이어의 위치까지 도달했다면 bfs를 마친다
+		if (maze_x == player.curX && maze_y == player.curY)
 			break;
-
-		// 막다른 길에 도달했을 경우에 true, 이외의 경우에 false가 된다
-		bool endOfPath = true;
 
 		for (int i = 0; i < 4; i++) {
 			// 다음 칸이 이미 방문한 칸이라면 두 번 밟지 않도록 한다
-			if (visited[maze_y + dy[i]][maze_x + dx[i]])
+			if (visitNum[maze_y + dy[i]][maze_x + dx[i]])
 				continue;
 			// 다음 칸이 벽이라면 다른 방향을 찾는다
 			if (mazeTxt[maze_y + dy[i]][maze_x + dx[i]] != ' ')
 				continue;
 
-			stack[++top][0] = maze_x + dx[i];
-			stack[top][1] = maze_y + dy[i];
-			endOfPath = false;
-			break;
+			// 다음 칸의 visitNum값은 현재 칸의 visitNum보다 1 큰 수이다
+			visitNum[maze_y + dy[i]][maze_x + dx[i]] = visitNum[maze_y][maze_x] + 1;
+			q.push(make_pair(maze_x + dx[i], maze_y + dy[i]));
 		}
+	}
 
-		// 막다른 길에 도달했다면 top을 줄여 이전 칸부터 다시 탐색한다
-		if (endOfPath)
-			top--;
-	};
+	while (!q.empty()) // 큐를 초기화한다
+		q.pop();
 }

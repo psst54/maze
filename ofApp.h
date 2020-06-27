@@ -67,8 +67,10 @@ public:
 	int curX, curY;
 	int stack[1000][2];
 	bool visited[70][70];
+	int visitNum[70][70];
 
 	void drawAnt(int size, int margin);
 	void moveAnt();
 	void dfs();
+	void bfs();
 };
