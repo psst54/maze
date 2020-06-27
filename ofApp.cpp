@@ -1,5 +1,8 @@
 #include "ofApp.h"
 
+Player player;
+Ant ant;
+
 //--------------------------------------------------------------
 void ofApp::setup() {
 	ofBackground(255);
@@ -7,8 +10,13 @@ void ofApp::setup() {
 
 //--------------------------------------------------------------
 void ofApp::update() {
+	if (player.curX == ant.curX && player.curY == ant.curY) {
+		gameEndFlag = true;
+		drawFlag = false;
+	}
 
-}
+	ant.moveAnt();
+} 
 
 //--------------------------------------------------------------
 void ofApp::draw() {
@@ -21,8 +29,8 @@ void ofApp::draw() {
 		drawMaze();
 	}
 
-	/*if (gameEnd) {
-		;
+	/*if (gameEndFlag) {
+		
 	}
 	*/
 }
@@ -33,14 +41,12 @@ void ofApp::keyPressed(int key) {
 		cout << "GENERATE NEW MAZE!\n";
 		generateMaze();
 		drawFlag = true;
-		curX = 1;
-		curY = 1;
 
-		for (int i = 0; i < HEIGHT * 2 + 1; i++) {
-			for (int j = 0; j < WIDTH * 2 + 1; j++) {
-				visited[i][j] = false;
-			}
-		}
+		player.curX = 1;
+		player.curY = 1;
+
+		ant.curX = 3;
+		ant.curY = 3;
 	}
 
 	if (key == 'Q' || key == 'q') {
@@ -48,28 +54,28 @@ void ofApp::keyPressed(int key) {
 	}
 
 	if (key == OF_KEY_DOWN && drawFlag) {
-		visited[curY][curX] = true;
-		if (mazeTxt[curY + 1][curX] == ' ')
-			curY++;
+		visited[player.curY][player.curX] = true;
+		if (mazeTxt[player.curY + 1][player.curX] == ' ')
+			player.curY++;
 	}
 	if (key == OF_KEY_LEFT && drawFlag) {
-		visited[curY][curX] = true;
-		if (mazeTxt[curY][curX - 1] == ' ')
-			curX--; 
+		visited[player.curY][player.curX] = true;
+		if (mazeTxt[player.curY][player.curX - 1] == ' ')
+			player.curX--;
 	}
 	if (key == OF_KEY_RIGHT && drawFlag) {
-		visited[curY][curX] = true;
-		if (mazeTxt[curY][curX + 1] == ' ')
-			curX++;
+		visited[player.curY][player.curX] = true;
+		if (mazeTxt[player.curY][player.curX + 1] == ' ')
+			player.curX++;
 	}
 	if (key == OF_KEY_UP && drawFlag) {
-		visited[curY][curX] = true;
-		if (mazeTxt[curY - 1][curX] == ' ')
-			curY--;
+		visited[player.curY][player.curX] = true;
+		if (mazeTxt[player.curY - 1][player.curX] == ' ')
+			player.curY--;
 	}
 
 
-	if (key == 'j') {
+	/*if (key == 'j') {
 		ofTrueTypeFont myfont;
 		myfont.load("arial.ttf", 15);
 		ofSetColor(100);
@@ -79,7 +85,7 @@ void ofApp::keyPressed(int key) {
 		ofUTF8Insert(arr, 80, 1);
 
 		myfont.drawString(arr, 400, 400);
-	}
+	}*/
 }
 
 //--------------------------------------------------------------
@@ -305,10 +311,16 @@ void ofApp::generateMaze() {
 	} while (hunt());		// 아직 방문하지 않은 곳이 있는지 찾는다
 
 	saveMazeToChar();
+
+	
+	for (int i = 0; i < HEIGHT; i++) {
+		free(mazeInfo[i]);
+	}
+	free(mazeInfo);
 }
 
 
-
+//--------------미로를 그리는 함수이다-------------//
 void ofApp::drawMaze()
 {
 	for (int i = 0; i < HEIGHT * 2 + 1; i++) {
@@ -333,43 +345,58 @@ void ofApp::drawMaze()
 			ofDrawRectangle(rect);
 		}
 	}
-	// 도착점
+
+	// 도착점에 흰색 원을 그린다
 	ofSetColor(255);
 	ofDrawCircle((WIDTH + 1) * 2 * cellSize, (HEIGHT + 1) * 2 * cellSize, cellSize / 2);
+	
+	// 만일 도착점에 도착한 경우, 미로 그림을 지우고 gmaeEndFlag를 set한다
+	if (player.curX == WIDTH * 2 - 1 && player.curY == HEIGHT * 2 - 1) {
+		gameEndFlag = true;
+		ofSleepMillis(100);
+		drawFlag = false;		// 미로가 더이상 표시되지 않도록 한다
+	}
 
-	// 현재 위치
+	
+	player.drawPlayer(cellSize, margin);
+	ant.drawAnt(cellSize, margin);
+}
+
+
+//--------------플레이어를 그리는 함수이다-------------//
+void Player::drawPlayer(int size, int margin)
+{
 	ofRectangle rect;
-	rect.x = curX * cellSize + margin;
-	rect.y = curY * cellSize + margin;
-	rect.width = cellSize;
-	rect.height = cellSize;
+	rect.x = player.curX * size + margin;
+	rect.y = player.curY * size + margin;
+	rect.width = size;
+	rect.height = size;
+	int fr = ofGetFrameNum();
+	if (fr % 20 < 10)
+		ofSetColor(230, 240, 80);
+	else
+		ofSetColor(140, 180, 110);
+	ofDrawRectangle(rect);
+}
+
+//--------------적을 그리는 함수이다-------------//
+void Ant::drawAnt(int size, int margin)
+{
+	ofRectangle rect;
+	rect.x = ant.curX * size + margin;
+	rect.y = ant.curY * size + margin;
+	rect.width = size;
+	rect.height = size;
 	int fr = ofGetFrameNum();
 	if (fr % 20 < 10)
 		ofSetColor(0, 230, 190);
 	else
 		ofSetColor(0, 150, 160);
 	ofDrawRectangle(rect);
-
-	if (curX == WIDTH * 2 - 1 && curY == HEIGHT * 2 - 1) {
-		drawFlag = false;
-		gameEnd = true;
-	}
-
-	Player player;
-	player.drawPlayer(curX, curY);
-
 }
 
-
-/*
-ofResetElapsedTimeCounter()
-
-ofSleepMillis(...)
-
-*/
-
-
-void Player::drawPlayer(int x, int y)
+void Ant::moveAnt()
 {
-	cout << "OK!!";
+	
+	
 }

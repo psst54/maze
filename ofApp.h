@@ -9,7 +9,6 @@
 #include <fstream>
 #include <string>
 
-
 class ofApp : public ofBaseApp{
 
 	public:
@@ -57,18 +56,26 @@ class ofApp : public ofBaseApp{
 
 
 		//------------미로 그리기에 필요한 변수들------------////
-		bool drawFlag = false, gameEnd = false;
+		bool drawFlag = false, gameEndFlag = false;
 		int cellSize = 20, margin = 50;
-		int curX = 1, curY = 1;		// 현재 플레이어의 칸
 		bool visited[500][500];
 
 		void drawMaze();
 };
 
+
 class Player {
 public:
-	void drawPlayer(int x, int y);
+	int curX, curY;
 
-private:
-	int pX, pY;
+	void drawPlayer(int size, int margin);
+};
+
+
+class Ant : public Player {
+public:
+	int curX, curY;
+
+	void drawAnt(int size, int margin);
+	void moveAnt();
 };
