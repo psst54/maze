@@ -11,16 +11,93 @@ void ofApp::update(){
 }
 
 //--------------------------------------------------------------
-void ofApp::draw(){
+void ofApp::draw() {
+	if (drawFlag) {
+		ofTrueTypeFont myfont;
+		myfont.load("arial.ttf", 10);
 
+		for (int i = 0; i < HEIGHT * 2 + 1; i++) {
+			for (int j = 0; j < WIDTH * 2 + 1; j++) {
+				ofRectangle rect;
+				rect.x = j * cellSize;
+				rect.y = i * cellSize;
+				rect.width = cellSize;
+				rect.height = cellSize;
+
+
+
+				if (j == curX && i == curY) {
+					ofSetColor(0, 0, 150);
+					ofDrawRectangle(rect);
+
+					ofSetColor(240);
+					string tmp = std::string(1, mazeTxt[i][j]);
+					myfont.drawString(tmp, j * cellSize, i * cellSize + 10);
+				}
+					
+				else if (visited[i][j]) {
+					ofSetColor(0, 150, 230);
+					ofDrawRectangle(rect);
+
+					ofSetColor(10);
+					string tmp = std::string(1, mazeTxt[i][j]);
+					myfont.drawString(tmp, j * cellSize, i * cellSize + 10);
+				}
+
+				else {
+					ofSetColor(0, 100, 190);
+					ofDrawRectangle(rect);
+				}
+			}
+		}
+	}
 }
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-	if (key == 'n') {
+	if (key == 'N' || key == 'n') {
 		cout << "\nGENERATE NEW MAZE!\n";
 		generateMaze();
+		drawFlag = true;
+		curX = 1;
+		curY = 1;
+
+		for (int i = 0; i < HEIGHT * 2 + 1; i++) {
+			for (int j = 0; j < WIDTH * 2 + 1; j++) {
+				visited[i][j] = false;
+			}
+		}
 	}
+
+	if (key == 'Q' || key == 'q') {
+		ofExit();
+	}
+
+	if (key == OF_KEY_DOWN && drawFlag) {
+		visited[curY][curX] = true;
+		if (mazeTxt[curY + 1][curX] >= 48 && mazeTxt[curY + 1][curX] <= 57)
+			curY++;
+		//printf("pressed Down\n");
+	}
+	if (key == OF_KEY_LEFT && drawFlag) {
+		visited[curY][curX] = true;
+		if (mazeTxt[curY][curX - 1] >= 48 && mazeTxt[curY][curX - 1] <= 57) 
+			curX--;
+		//printf("pressed Left\n");
+	}
+	if (key == OF_KEY_RIGHT && drawFlag) {
+		visited[curY][curX] = true;
+		if (mazeTxt[curY][curX + 1] >= 48 && mazeTxt[curY][curX + 1] <= 57) 
+			curX++;
+		//printf("pressed Right\n");
+	}
+	if (key == OF_KEY_UP && drawFlag) {
+		visited[curY][curX] = true;
+		if (mazeTxt[curY - 1][curX] >= 48 && mazeTxt[curY - 1][curX] <= 57) 
+			curY--;
+		//printf("pressed Up\n");
+	}
+
 }
 
 //--------------------------------------------------------------
@@ -179,29 +256,31 @@ void ofApp::saveMazeToChar()
 	}
 
 
-	/*printf("\n\n");
+	printf("\n\n");
 	for (int i = 0; i < HEIGHT * 2 + 1; i++) {
 		for (int j = 0; j < WIDTH * 2 + 1; j++) {
 			printf("%c", mazeTxt[i][j]);
 		}
 		printf("\n");
-	}*/
+	}
 }
 
 char ofApp::getDirNum(int tX, int tY)
 {
-	int dx[8] = { -1, -1, -1, 0, 0, 1, 1, 1 },
-		dy[8] = { -1, 0, 1, -1, 1, -1, 0, 1 };
+	//int dx[8] = { -1, -1, -1, 0, 0, 1, 1, 1 },
+	//	dy[8] = { -1, 0, 1, -1, 1, -1, 0, 1 };
+	int dx[4] = { -1, 0, 1, 0 },
+		dy[4] = { 0, -1, 0, 1 };
 	char cnt = 0;
 
-	for (int i = 0; i < 8; i++) {
-		if (mazeTxt[tY + dy[i]][tX + dx[i]] != '|' &&
-			mazeTxt[tY + dy[i]][tX + dx[i]] != '-' &&
-			mazeTxt[tY + dy[i]][tX + dx[i]] != '+')
+	for (int i = 0; i < 4; i++) {
+		if (mazeTxt[tY + dy[i]][tX + dx[i]] == '|' ||
+			mazeTxt[tY + dy[i]][tX + dx[i]] == '-' ||
+			mazeTxt[tY + dy[i]][tX + dx[i]] == '+')
 			cnt++;
 	}
 
-	return cnt;
+	return (4 - cnt);
 }
 
 void ofApp::saveMazeToCharWithNum()
@@ -216,33 +295,37 @@ void ofApp::saveMazeToCharWithNum()
 
 		mazeTxt[i * 2 - 1][0] = '|';
 		for (int j = 1; j <= WIDTH; j++) {
-			mazeTxt[i * 2 - 1][j * 2 - 1] = getDirNum(j * 2 - 1, i * 2 - 1) + 48;
+			
 
 			if (mazeInfo[i - 1][j - 1].right)
 				mazeTxt[i * 2 - 1][j * 2] = '|';
 			else
 				mazeTxt[i * 2 - 1][j * 2] = getDirNum(j * 2, i * 2 - 1) + 48;
+
+			mazeTxt[i * 2 - 1][j * 2 - 1] = getDirNum(j * 2 - 1, i * 2 - 1) + 48;
 		}
 
 		mazeTxt[i * 2][0] = '+';
 		for (int j = 1; j <= WIDTH; j++) {
-			mazeTxt[i * 2][j * 2] = '+';
+			
 
 			if (mazeInfo[i - 1][j - 1].down)
 				mazeTxt[i * 2][j * 2 - 1] = '-';
 			else
 				mazeTxt[i * 2][j * 2 - 1] = getDirNum(j * 2 - 1, i * 2) + 48;
+
+			mazeTxt[i * 2][j * 2] = '+';
 		}
 	}
 
 
-	/*printf("\n\n");
+	printf("\n\n");
 	for (int i = 0; i < HEIGHT * 2 + 1; i++) {
 		for (int j = 0; j < WIDTH * 2 + 1; j++) {
 			printf("%c", mazeTxt[i][j]);
 		}
 		printf("\n");
-	}*/
+	}
 }
 
 
@@ -377,6 +460,6 @@ void ofApp::generateMaze() {
 
 	//printMazeToFile();
 	//printMazeToScreen();
-	//saveMazeToChar();
+	saveMazeToChar();
 	saveMazeToCharWithNum();
 }

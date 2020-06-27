@@ -7,6 +7,7 @@
 #include <ctime>
 #include <queue>
 #include <fstream>
+#include <string>
 
 
 class ofApp : public ofBaseApp{
@@ -58,5 +59,12 @@ class ofApp : public ofBaseApp{
 		void walk();
 		bool hunt();
 		void generateMaze();
+
+
+		//------------미로 그리기에 필요한 변수들------------////
+		bool drawFlag = false;
+		int cellSize = 20;
+		int curX = 1, curY = 1;		// 현재 플레이어의 칸
+		bool visited[500][500];
 
 };
