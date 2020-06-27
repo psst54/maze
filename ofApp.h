@@ -45,12 +45,7 @@ class ofApp : public ofBaseApp{
 		queue<pair<int, int> > q;
 
 		//------------미로 생성에 필요한 함수들------------//
-		void printMazeToFile();				// 출력 확인용 함수이다
-		void printMazeToScreen();			// 출력 확인용 함수이다
 		void saveMazeToChar();				// saveMazeToCharWithNum의 이전 버전이다
-		char getDirNum(int tX, int tY);					// saveMazeToCharWithNum에서 저장할 숫자를 불러오는 함수이다
-		void saveMazeToCharWithNum();
-
 
 		bool check4Dir(int x, int y, bool v);
 		bool check1Dir(int x, int y, int direction, bool v);
@@ -62,9 +57,18 @@ class ofApp : public ofBaseApp{
 
 
 		//------------미로 그리기에 필요한 변수들------------////
-		bool drawFlag = false;
+		bool drawFlag = false, gameEnd = false;
 		int cellSize = 20, margin = 50;
 		int curX = 1, curY = 1;		// 현재 플레이어의 칸
 		bool visited[500][500];
 
+		void drawMaze();
+};
+
+class Player {
+public:
+	void drawPlayer(int x, int y);
+
+private:
+	int pX, pY;
 };

@@ -12,55 +12,25 @@ void ofApp::update() {
 
 //--------------------------------------------------------------
 void ofApp::draw() {
+	ofTrueTypeFont myfont;
+	myfont.load("arial.ttf", 15);
+	ofSetColor(100);
+	myfont.drawString("Enter n to generate new maze", 20, 20);
+
 	if (drawFlag) {
-		ofTrueTypeFont myfont;
-		myfont.load("arial.ttf", 10);
-		
-		for (int i = 0; i < HEIGHT * 2 + 1; i++) {
-			for (int j = 0; j < WIDTH * 2 + 1; j++) {
-				
-				ofRectangle rect;
-				rect.x = j * cellSize + margin;
-				rect.y = i * cellSize + margin;
-				rect.width = cellSize;
-				rect.height = cellSize;
-
-				// 테두리
-				if (mazeTxt[i][j] == '+' || 
-					mazeTxt[i][j] == '-' ||
-					mazeTxt[i][j] == '|') {
-					ofSetColor(0, 40, 80);
-				}
-				// 길
-				else {
-					ofSetColor(0, 100, 150);
-				}
-				ofDrawRectangle(rect);
-			}
-		}
-		// 도착점
-		ofSetColor(255);
-		ofDrawCircle((WIDTH + 1) * 2 * cellSize, (HEIGHT + 1) * 2 * cellSize, cellSize / 2);
-
-		// 현재 위치
-		ofRectangle rect;
-		rect.x = curX * cellSize + margin;
-		rect.y = curY * cellSize + margin;
-		rect.width = cellSize;
-		rect.height = cellSize;
-		int fr = ofGetFrameNum();
-		if (fr % 20 < 10)
-			ofSetColor(0, 230, 190);
-		else
-			ofSetColor(0, 150, 160);
-		ofDrawRectangle(rect);
+		drawMaze();
 	}
+
+	/*if (gameEnd) {
+		;
+	}
+	*/
 }
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key) {
 	if (key == 'N' || key == 'n') {
-		cout << "\nGENERATE NEW MAZE!\n";
+		cout << "GENERATE NEW MAZE!\n";
 		generateMaze();
 		drawFlag = true;
 		curX = 1;
@@ -85,7 +55,7 @@ void ofApp::keyPressed(int key) {
 	if (key == OF_KEY_LEFT && drawFlag) {
 		visited[curY][curX] = true;
 		if (mazeTxt[curY][curX - 1] == ' ')
-			curX--;
+			curX--; 
 	}
 	if (key == OF_KEY_RIGHT && drawFlag) {
 		visited[curY][curX] = true;
@@ -98,6 +68,18 @@ void ofApp::keyPressed(int key) {
 			curY--;
 	}
 
+
+	if (key == 'j') {
+		ofTrueTypeFont myfont;
+		myfont.load("arial.ttf", 15);
+		ofSetColor(100);
+		myfont.drawString("Enter name : ", 200, 200);
+
+		string arr;
+		ofUTF8Insert(arr, 80, 1);
+
+		myfont.drawString(arr, 400, 400);
+	}
 }
 
 //--------------------------------------------------------------
@@ -153,77 +135,6 @@ void ofApp::dragEvent(ofDragInfo dragInfo) {
 
 
 //-----------함수 선언------------//
-void ofApp::printMazeToFile()
-{
-	ofstream writeFile;
-	writeFile.open("output.maz");
-	if (!writeFile.is_open()) {
-		printf("error\n");
-		std::exit(1);
-	}
-	else {
-		writeFile << "+";
-		for (int i = 0; i < WIDTH; i++) {
-			writeFile << "-+";
-		}
-		writeFile << "\n";
-		for (int i = 0; i < HEIGHT; i++) {
-			writeFile << "|";
-			for (int j = 0; j < WIDTH; j++) {
-				if (mazeInfo[i][j].right)
-					writeFile << " |";
-				else
-					writeFile << "  ";
-			}
-
-			writeFile << "\n";
-
-			writeFile << "+";
-			for (int j = 0; j < WIDTH; j++) {
-				if (mazeInfo[i][j].down)
-					writeFile << "-+";
-				else
-					writeFile << " +";
-			}
-
-			writeFile << "\n";
-		}
-		writeFile << "\n";
-	}
-	writeFile.close();
-}
-
-void ofApp::printMazeToScreen()
-{
-	printf("+");
-	for (int i = 0; i < WIDTH; i++) {
-		printf("-+");
-	}
-	printf("\n");
-	for (int i = 0; i < HEIGHT; i++) {
-		printf("|");
-		for (int j = 0; j < WIDTH; j++) {
-			if (mazeInfo[i][j].right)
-				printf(" |");
-			else
-				printf("  ");
-		}
-
-		printf("\n");
-
-		printf("+");
-		for (int j = 0; j < WIDTH; j++) {
-			if (mazeInfo[i][j].down)
-				printf("-+");
-			else
-				printf(" +");
-		}
-
-		printf("\n");
-	}
-	printf("\n");
-}
-
 void ofApp::saveMazeToChar()
 {
 	mazeTxt[0][0] = '+';
@@ -256,13 +167,13 @@ void ofApp::saveMazeToChar()
 	}
 
 
-	printf("\n\n");
+	/*printf("\n\n");
 	for (int i = 0; i < HEIGHT * 2 + 1; i++) {
 		for (int j = 0; j < WIDTH * 2 + 1; j++) {
 			printf("%c", mazeTxt[i][j]);
 		}
 		printf("\n");
-	}
+	}*/
 }
 
 
@@ -393,8 +304,72 @@ void ofApp::generateMaze() {
 			walk();
 	} while (hunt());		// 아직 방문하지 않은 곳이 있는지 찾는다
 
-
-	//printMazeToFile();
-	//printMazeToScreen();
 	saveMazeToChar();
+}
+
+
+
+void ofApp::drawMaze()
+{
+	for (int i = 0; i < HEIGHT * 2 + 1; i++) {
+		for (int j = 0; j < WIDTH * 2 + 1; j++) {
+
+			ofRectangle rect;
+			rect.x = j * cellSize + margin;
+			rect.y = i * cellSize + margin;
+			rect.width = cellSize;
+			rect.height = cellSize;
+
+			// 테두리
+			if (mazeTxt[i][j] == '+' ||
+				mazeTxt[i][j] == '-' ||
+				mazeTxt[i][j] == '|') {
+				ofSetColor(0, 40, 80);
+			}
+			// 길
+			else {
+				ofSetColor(0, 100, 150);
+			}
+			ofDrawRectangle(rect);
+		}
+	}
+	// 도착점
+	ofSetColor(255);
+	ofDrawCircle((WIDTH + 1) * 2 * cellSize, (HEIGHT + 1) * 2 * cellSize, cellSize / 2);
+
+	// 현재 위치
+	ofRectangle rect;
+	rect.x = curX * cellSize + margin;
+	rect.y = curY * cellSize + margin;
+	rect.width = cellSize;
+	rect.height = cellSize;
+	int fr = ofGetFrameNum();
+	if (fr % 20 < 10)
+		ofSetColor(0, 230, 190);
+	else
+		ofSetColor(0, 150, 160);
+	ofDrawRectangle(rect);
+
+	if (curX == WIDTH * 2 - 1 && curY == HEIGHT * 2 - 1) {
+		drawFlag = false;
+		gameEnd = true;
+	}
+
+	Player player;
+	player.drawPlayer(curX, curY);
+
+}
+
+
+/*
+ofResetElapsedTimeCounter()
+
+ofSleepMillis(...)
+
+*/
+
+
+void Player::drawPlayer(int x, int y)
+{
+	cout << "OK!!";
 }
