@@ -5,31 +5,47 @@ typedef struct _cell {
 	bool left;
 	bool up;
 	bool right;
-	bool down;		// 벽이 없는 경우 false
-	bool visited;	// 방문한 경우 true
+	bool down;		
+	// 벽이 없는 경우 false
+	bool visited;	
+	// 방문한 경우 true
 } cell;
-cell mazeInfo[100][100];
-char mazeTxt[100][100];
 
-int dx[4] = { -1, 0, 1, 0 }, dy[4] = { 0, -1, 0, 1 }; // left up right down
+// 미로 생성에 필요한 구조체이다. 각 칸의 상하좌우에 벽이 있는지, 방문한 칸인지를 저장한다
+cell mazeInfo[30][30];	
+// mazeInfo를 통해 생성된 미로를 char형으로 그림처럼 저장하는 배열이다
+char mazeTxt[70][70];
+
+// 각각 left up right down 방향으로 이동하는 경우를 dx, dy에 저장하였다
+int dx[4] = { -1, 0, 1, 0 }, dy[4] = { 0, -1, 0, 1 }; 
+//미로의 가로, 세로 칸 수이다
 int WIDTH, HEIGHT;
+// 미로 생성에서 사용되는 큐이다
 queue<pair<int, int> > q;
 
-Player player;
-Ant ant;
 
-
+Player player;		// player를 생성한다.
+Ant ant;			// 장애물을 생성한다.
 
 
 
 //--------------------------------------------------------------
 void ofApp::setup() {
-	ofBackground(255);
+	ofBackground(255);	//배경은 흰색으로 지정한다
 }
 
 //--------------------------------------------------------------
 void ofApp::update() {
+	// 도착점에 도착한 경우, 미로 그림을 지우고 gmaeEndFlag를 set한다
+	if (drawFlag && player.curX == WIDTH * 2 - 1 && player.curY == HEIGHT * 2 - 1) {
+		ofSleepMillis(500);		// 미로를 지우기 전에 잠시 멈춘다
+		gameEndFlag = true;
+		drawFlag = false;
+	}
+
+	// 장애물과 마주친 경우, 미로 그림을 지우고 gmaeEndFlag를 set한다
 	if (drawFlag && player.curX == ant.curX && player.curY == ant.curY) {
+		ofSleepMillis(500);		// 미로를 지우기 전에 잠시 멈춘다
 		gameEndFlag = true;
 		drawFlag = false;
 	}
@@ -46,69 +62,60 @@ void ofApp::draw() {
 	ofSetColor(100);
 	myfont.drawString("Enter n to generate new maze", 20, 20);
 
+	// 미로가 생성된 경우 drawFlag가 true이고, 그 경우에 미로를 그린다
 	if (drawFlag) {
 		drawMaze();
 	}
-
-	/*if (gameEndFlag) {
-		
-	}
-	*/
 }
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key) {
+	// n을 누르면 새 미로를 만들 수 있다
 	if (key == 'N' || key == 'n') {
 		cout << "GENERATE NEW MAZE!\n";
+		
+		//미로 생성 함수를 호출한다
 		generateMaze();
-		drawFlag = true;
-
+		
 		// 플레이어의 시작점은 좌측 상단이다
 		player.curX = 1;
 		player.curY = 1;
 
-		// 장애물의 시작점은 랜덤으로 정해진다///////////////////////////////////
-		ant.curX = WIDTH * 2 - 1;
-		ant.curY = HEIGHT * 2 - 1;
+		// 장애물의 시작점은 랜덤으로 정해진다
+		do {
+			ant.curX = (rand() % WIDTH) * 2 - 1;
+		} while (ant.curX <= 1); // 시작점과 너무 가깝지 않도록 조정한다
+
+		do {
+			ant.curY = (rand() % HEIGHT) * 2 - 1;
+		} while (ant.curY <= 1); // 시작점과 너무 가깝지 않도록 조정한다
+
+		drawFlag = true;
 	}
 
+	//Q를 누르면 프로그램을 종료한다
 	if (key == 'Q' || key == 'q') {
 		ofExit();
 	}
 
+	// 방향키를 통해 플레이어를 움직일 수 있다
 	if (key == OF_KEY_DOWN && drawFlag) {
-		visited[player.curY][player.curX] = true;
 		if (mazeTxt[player.curY + 1][player.curX] == ' ')
 			player.curY++;
 	}
 	if (key == OF_KEY_LEFT && drawFlag) {
-		visited[player.curY][player.curX] = true;
 		if (mazeTxt[player.curY][player.curX - 1] == ' ')
 			player.curX--;
 	}
 	if (key == OF_KEY_RIGHT && drawFlag) {
-		visited[player.curY][player.curX] = true;
 		if (mazeTxt[player.curY][player.curX + 1] == ' ')
 			player.curX++;
 	}
 	if (key == OF_KEY_UP && drawFlag) {
-		visited[player.curY][player.curX] = true;
 		if (mazeTxt[player.curY - 1][player.curX] == ' ')
 			player.curY--;
 	}
 
-
-	/*if (key == 'j') {
-		ofTrueTypeFont myfont;
-		myfont.load("arial.ttf", 15);
-		ofSetColor(100);
-		myfont.drawString("Enter name : ", 200, 200);
-
-		string arr;
-		ofUTF8Insert(arr, 80, 1);
-
-		myfont.drawString(arr, 400, 400);
-	}*/
 }
 
 //--------------------------------------------------------------
@@ -306,12 +313,12 @@ void ofApp::generateMaze() {
 	srand(time(NULL));
 
 	do {
-		cout << "Maze size must be smaller than 30 x 30\n";
+		cout << "3 <= WIDTH <= 30, 3 <= HEIGHT <= 30\n";
 		cout << "WIDTH : ";
 		cin >> WIDTH;
 		cout << "HEIGHT : ";
 		cin >> HEIGHT;
-	} while (WIDTH < 0 || WIDTH > 30 || HEIGHT < 0 || HEIGHT > 30);
+	} while (WIDTH < 3 || WIDTH > 30 || HEIGHT < 3 || HEIGHT > 30);
 	
 	for (int i = 0; i < HEIGHT; i++) {
 		for (int j = 0; j < WIDTH; j++) {
@@ -333,6 +340,7 @@ void ofApp::generateMaze() {
 			walk();
 	} while (hunt());		// 아직 방문하지 않은 곳이 있는지 찾는다
 
+	// 생성된 미로의 전체 그림을 char형으로 저장한다
 	saveMazeToChar();
 }
 
@@ -367,14 +375,6 @@ void ofApp::drawMaze()
 	ofSetColor(255);
 	ofDrawCircle((WIDTH + 1) * 2 * cellSize, (HEIGHT + 1) * 2 * cellSize, cellSize / 2);
 	
-	// 만일 도착점에 도착한 경우, 미로 그림을 지우고 gmaeEndFlag를 set한다
-	if (player.curX == WIDTH * 2 - 1 && player.curY == HEIGHT * 2 - 1) {
-		gameEndFlag = true;
-		ofSleepMillis(100);
-		drawFlag = false;		// 미로가 더이상 표시되지 않도록 한다
-	}
-
-	
 	player.drawPlayer(cellSize, margin);
 	ant.drawAnt(cellSize, margin);
 }
@@ -384,21 +384,29 @@ void ofApp::drawMaze()
 void Player::drawPlayer(int size, int margin)
 {
 	ofRectangle rect;
-	rect.x = player.curX * size + margin;
+	// 플레이어의 x좌표는 curX * size(미로 한 칸의 사이즈) + margin(왼쪽 여백)이 된다.
+	rect.x = player.curX * size + margin;	
+	// 플레이어의 y좌표는 curY * size(미로 한 칸의 사이즈) + margin(위쪽 여백)이 된다.
 	rect.y = player.curY * size + margin;
+	// 한 칸의 크기는 size * size이다
 	rect.width = size;
 	rect.height = size;
+
+	// 깜박이는 효과를 위해 frame 번호가 5번 바뀔때마다 색을 바꿔준다
 	int fr = ofGetFrameNum();
 	if (fr % 20 < 10)
 		ofSetColor(230, 240, 80);
 	else
 		ofSetColor(140, 180, 110);
+
+	// 위에서 지정된 좌표, 사이즈, 색상을 토대로 플레이어를 그린다
 	ofDrawRectangle(rect);
 }
 
 //--------------장애물을 그리는 함수이다-------------//
 void Ant::drawAnt(int size, int margin)
 {
+	// drawPlayer에서 색만 바꾼 함수이다
 	ofRectangle rect;
 	rect.x = ant.curX * size + margin;
 	rect.y = ant.curY * size + margin;
@@ -415,14 +423,10 @@ void Ant::drawAnt(int size, int margin)
 //--------------장애물을 이동시키는 함수이다-------------//
 void Ant::moveAnt()
 {
-	/*for (int i = 0; i < 4; i++) {
-		if (mazeTxt[curY + dy[i]][curX + dx[i]] == ' ') {
-			curX += dx[i];
-			curY += dy[i];
-			break;
-		}
-	}*/
+	// 장애물은 dfs의 결과값을 이용해 플레이어 방향으로 이동한다
 	ant.dfs();
+	// stack[0]에는 현재 장애물의 좌표가 저장되어 있으므로,
+	// stack[1]에 있는 좌표값으로 이동한다.
 	curX = stack[1][0];
 	curY = stack[1][1];
 }
@@ -430,10 +434,10 @@ void Ant::moveAnt()
 //--------------장애물이 이동할 경로를 찾는 함수이다-------------//
 void Ant::dfs()
 {
-	//-------초기화
+	//-------스택과 미로의 방문 정보를 초기화한다
 	for (int i = 0; i < HEIGHT * 2 + 1; i++) {
 		for (int j = 0; j < WIDTH * 2 + 1; j++) {
-			mazeInfo[i][j].visited = false;
+			visited[i][j] = false;
 		}
 	}
 	int top = -1;
@@ -447,16 +451,20 @@ void Ant::dfs()
 	while (1) {
 		maze_x = stack[top][0];
 		maze_y = stack[top][1];
-		mazeInfo[maze_y][maze_x].visited = true;
+		visited[maze_y][maze_x] = true;
 
-		if (maze_x == player.curX && maze_y == player.curY)
+		// 플레이어의 위치까지 도달했다면 dfs를 마친다
+		if (maze_x == player.curX && maze_y == player.curY)			
 			break;
 
+		// 막다른 길에 도달했을 경우에 true, 이외의 경우에 false가 된다
 		bool endOfPath = true;
 
 		for (int i = 0; i < 4; i++) {
-			if (mazeInfo[maze_y + dy[i]][maze_x + dx[i]].visited)
+			// 다음 칸이 이미 방문한 칸이라면 두 번 밟지 않도록 한다
+			if (visited[maze_y + dy[i]][maze_x + dx[i]])
 				continue;
+			// 다음 칸이 벽이라면 다른 방향을 찾는다
 			if (mazeTxt[maze_y + dy[i]][maze_x + dx[i]] != ' ')
 				continue;
 
@@ -466,6 +474,7 @@ void Ant::dfs()
 			break;
 		}
 
+		// 막다른 길에 도달했다면 top을 줄여 이전 칸부터 다시 탐색한다
 		if (endOfPath)
 			top--;
 	};
