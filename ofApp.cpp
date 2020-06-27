@@ -1,7 +1,26 @@
 #include "ofApp.h"
 
+//------------미로 생성에 필요한 변수들------------//
+typedef struct _cell {
+	bool left;
+	bool up;
+	bool right;
+	bool down;		// 벽이 없는 경우 false
+	bool visited;	// 방문한 경우 true
+} cell;
+cell mazeInfo[100][100];
+char mazeTxt[100][100];
+
+int dx[4] = { -1, 0, 1, 0 }, dy[4] = { 0, -1, 0, 1 }; // left up right down
+int WIDTH, HEIGHT;
+queue<pair<int, int> > q;
+
 Player player;
 Ant ant;
+
+
+
+
 
 //--------------------------------------------------------------
 void ofApp::setup() {
@@ -10,12 +29,14 @@ void ofApp::setup() {
 
 //--------------------------------------------------------------
 void ofApp::update() {
-	if (player.curX == ant.curX && player.curY == ant.curY) {
+	if (drawFlag && player.curX == ant.curX && player.curY == ant.curY) {
 		gameEndFlag = true;
 		drawFlag = false;
 	}
 
-	ant.moveAnt();
+	// 30프레임에 한번씩 장애물을 이동한다.
+	if (drawFlag && (ofGetFrameNum() % 30) == 0)
+		ant.moveAnt();
 } 
 
 //--------------------------------------------------------------
@@ -42,11 +63,13 @@ void ofApp::keyPressed(int key) {
 		generateMaze();
 		drawFlag = true;
 
+		// 플레이어의 시작점은 좌측 상단이다
 		player.curX = 1;
 		player.curY = 1;
 
-		ant.curX = 3;
-		ant.curY = 3;
+		// 장애물의 시작점은 랜덤으로 정해진다///////////////////////////////////
+		ant.curX = WIDTH * 2 - 1;
+		ant.curY = HEIGHT * 2 - 1;
 	}
 
 	if (key == 'Q' || key == 'q') {
@@ -282,14 +305,15 @@ bool ofApp::hunt()
 void ofApp::generateMaze() {
 	srand(time(NULL));
 
-	cout << "WIDTH : ";
-	cin >> WIDTH;
-	cout << "HEIGHT : ";
-	cin >> HEIGHT;
-
-	mazeInfo = (cell**)malloc(sizeof(cell*) * HEIGHT);
+	do {
+		cout << "Maze size must be smaller than 30 x 30\n";
+		cout << "WIDTH : ";
+		cin >> WIDTH;
+		cout << "HEIGHT : ";
+		cin >> HEIGHT;
+	} while (WIDTH < 0 || WIDTH > 30 || HEIGHT < 0 || HEIGHT > 30);
+	
 	for (int i = 0; i < HEIGHT; i++) {
-		mazeInfo[i] = (cell*)malloc(sizeof(cell) * WIDTH);
 		for (int j = 0; j < WIDTH; j++) {
 			mazeInfo[i][j].left = true;
 			mazeInfo[i][j].up = true;
@@ -299,24 +323,17 @@ void ofApp::generateMaze() {
 		}
 	}
 
-
 	int startX = rand() % WIDTH;
 	int startY = rand() % HEIGHT;
 	// 미로 생성을 시작할 지점을 랜덤으로 지정한다
 	q.push(make_pair(startX, startY));
 
 	do {
-		while (!q.empty()) // 더이상 움질일 수 없을 때까지
+		while (!q.empty())	// 더이상 움질일 수 없을 때까지
 			walk();
 	} while (hunt());		// 아직 방문하지 않은 곳이 있는지 찾는다
 
 	saveMazeToChar();
-
-	
-	for (int i = 0; i < HEIGHT; i++) {
-		free(mazeInfo[i]);
-	}
-	free(mazeInfo);
 }
 
 
@@ -379,7 +396,7 @@ void Player::drawPlayer(int size, int margin)
 	ofDrawRectangle(rect);
 }
 
-//--------------적을 그리는 함수이다-------------//
+//--------------장애물을 그리는 함수이다-------------//
 void Ant::drawAnt(int size, int margin)
 {
 	ofRectangle rect;
@@ -395,8 +412,61 @@ void Ant::drawAnt(int size, int margin)
 	ofDrawRectangle(rect);
 }
 
+//--------------장애물을 이동시키는 함수이다-------------//
 void Ant::moveAnt()
 {
-	
-	
+	/*for (int i = 0; i < 4; i++) {
+		if (mazeTxt[curY + dy[i]][curX + dx[i]] == ' ') {
+			curX += dx[i];
+			curY += dy[i];
+			break;
+		}
+	}*/
+	ant.dfs();
+	curX = stack[1][0];
+	curY = stack[1][1];
+}
+
+//--------------장애물이 이동할 경로를 찾는 함수이다-------------//
+void Ant::dfs()
+{
+	//-------초기화
+	for (int i = 0; i < HEIGHT * 2 + 1; i++) {
+		for (int j = 0; j < WIDTH * 2 + 1; j++) {
+			mazeInfo[i][j].visited = false;
+		}
+	}
+	int top = -1;
+	//-------초기화
+
+	int maze_x = ant.curX, maze_y = ant.curY;
+
+	stack[++top][0] = maze_x;
+	stack[top][1] = maze_y;
+
+	while (1) {
+		maze_x = stack[top][0];
+		maze_y = stack[top][1];
+		mazeInfo[maze_y][maze_x].visited = true;
+
+		if (maze_x == player.curX && maze_y == player.curY)
+			break;
+
+		bool endOfPath = true;
+
+		for (int i = 0; i < 4; i++) {
+			if (mazeInfo[maze_y + dy[i]][maze_x + dx[i]].visited)
+				continue;
+			if (mazeTxt[maze_y + dy[i]][maze_x + dx[i]] != ' ')
+				continue;
+
+			stack[++top][0] = maze_x + dx[i];
+			stack[top][1] = maze_y + dy[i];
+			endOfPath = false;
+			break;
+		}
+
+		if (endOfPath)
+			top--;
+	};
 }
