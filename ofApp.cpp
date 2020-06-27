@@ -52,7 +52,7 @@ void ofApp::update() {
 	}
 
 	// 30프레임에 한번씩 장애물을 이동한다.
-	if (drawFlag && (ofGetFrameNum() % 30) == 0)
+	if (drawFlag && (ofGetFrameNum() % 10) == 0)
 		ant.moveAnt();
 } 
 
@@ -279,20 +279,20 @@ void ofApp::walk()
 	q.pop();
 	mazeInfo[y][x].visited = true;
 
-	if (!check4Dir(x, y, true)) {// 더이상 움직일 수 없다면 함수를 마친다
+	while (!check4Dir(x, y, true)) {// 더이상 움직일 수 없다면 함수를 마친다
 		if (x + dx[0] >= 0 && mazeInfo[y][x].left) {// 왼쪽 방향으로 루프를 만들 수 있다면 그렇게 한다
 			breakWall(x, y, 0);
 			return;
 		}
-		if (y + dy[1] >= 0 && mazeInfo[y][x].up) {// 왼쪽 방향으로 루프를 만들 수 있다면 그렇게 한다
+		if (y + dy[1] >= 0 && mazeInfo[y][x].up) {// 위쪽 방향으로 루프를 만들 수 있다면 그렇게 한다
 			breakWall(x, y, 1);
 			return;
 		}
-		if (x + dx[2] < WIDTH && mazeInfo[y][x].right) {// 왼쪽 방향으로 루프를 만들 수 있다면 그렇게 한다
+		if (x + dx[2] < WIDTH && mazeInfo[y][x].right) {// 오른쪽 방향으로 루프를 만들 수 있다면 그렇게 한다
 			breakWall(x, y, 2);
 			return;
 		}
-		if (y + dy[3] < HEIGHT && mazeInfo[y][x].down) {// 왼쪽 방향으로 루프를 만들 수 있다면 그렇게 한다
+		if (y + dy[3] < HEIGHT && mazeInfo[y][x].down) {// 아래쪽 방향으로 루프를 만들 수 있다면 그렇게 한다
 			breakWall(x, y, 3);
 			return;
 		}
@@ -348,9 +348,9 @@ void ofApp::generateMaze() {
 		}
 	}
 
-	int startX = rand() % WIDTH;
-	int startY = rand() % HEIGHT;
-	// 미로 생성을 시작할 지점을 랜덤으로 지정한다
+	// 시작 지점은 임의로 0, 0으로 둔다
+	int startX = 0;
+	int startY = 0;
 	q.push(make_pair(startX, startY));
 
 	do {
@@ -485,7 +485,6 @@ void Ant::bfs()
 	while (1) {
 		maze_x = q.front().first;
 		maze_y = q.front().second;
-		visited[maze_y][maze_x] = true;
 		q.pop();
 
 		// 플레이어의 위치까지 도달했다면 bfs를 마친다
