@@ -63,7 +63,7 @@ class ofApp : public ofBaseApp{
 
 		//------------미로 그리기에 필요한 변수들------------////
 		bool drawFlag = false;
-		int cellSize = 20;
+		int cellSize = 20, margin = 50;
 		int curX = 1, curY = 1;		// 현재 플레이어의 칸
 		bool visited[500][500];
 
