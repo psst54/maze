@@ -61,7 +61,7 @@ void ofApp::draw() {
 	ofTrueTypeFont myfont;
 	myfont.load("arial.ttf", 15);
 	ofSetColor(100);
-	myfont.drawString("Enter n to generate new maze", 20, 20);
+	myfont.drawString("Press n to generate new maze", 20, 20);
 
 	// 미로가 생성된 경우 drawFlag가 true이고, 그 경우에 미로를 그린다
 	if (drawFlag) {
@@ -279,25 +279,8 @@ void ofApp::walk()
 	q.pop();
 	mazeInfo[y][x].visited = true;
 
-	while (!check4Dir(x, y, true)) {// 더이상 움직일 수 없다면 함수를 마친다
-		if (x + dx[0] >= 0 && mazeInfo[y][x].left) {// 왼쪽 방향으로 루프를 만들 수 있다면 그렇게 한다
-			breakWall(x, y, 0);
-			return;
-		}
-		if (y + dy[1] >= 0 && mazeInfo[y][x].up) {// 위쪽 방향으로 루프를 만들 수 있다면 그렇게 한다
-			breakWall(x, y, 1);
-			return;
-		}
-		if (x + dx[2] < WIDTH && mazeInfo[y][x].right) {// 오른쪽 방향으로 루프를 만들 수 있다면 그렇게 한다
-			breakWall(x, y, 2);
-			return;
-		}
-		if (y + dy[3] < HEIGHT && mazeInfo[y][x].down) {// 아래쪽 방향으로 루프를 만들 수 있다면 그렇게 한다
-			breakWall(x, y, 3);
-			return;
-		}
+	if (!check4Dir(x, y, true))	// 더이상 움직일 수 없다면 함수를 마친다
 		return;
-	}
 
 	int dir = rand() % 4;
 	while (!check1Dir(x + dx[dir], y + dy[dir], dir, true)) // 움질일 수 없는경우 재생성
@@ -330,14 +313,16 @@ bool ofApp::hunt()
 void ofApp::generateMaze() {
 	srand(time(NULL));
 
+	// 미로의 크기는 2 이상 30 이하로 제한한다
+	// 더 큰 미로를 만들고 싶다면 mazeInfo, mazeTxt, visitNum의 배열 크기를 늘리고 cellSize를 조정한다
 	do {
-		cout << "3 <= WIDTH <= 30, 3 <= HEIGHT <= 30\n";
+		cout << "2 <= WIDTH <= 30, 2 <= HEIGHT <= 30\n";
 		cout << "WIDTH : ";
 		cin >> WIDTH;
 		cout << "HEIGHT : ";
 		cin >> HEIGHT;
-	} while (WIDTH < 3 || WIDTH > 30 || HEIGHT < 3 || HEIGHT > 30);
-	
+	} while (WIDTH < 2 || WIDTH > 30 || HEIGHT < 2 || HEIGHT > 30);
+
 	for (int i = 0; i < HEIGHT; i++) {
 		for (int j = 0; j < WIDTH; j++) {
 			mazeInfo[i][j].left = true;
@@ -348,9 +333,9 @@ void ofApp::generateMaze() {
 		}
 	}
 
-	// 시작 지점은 임의로 0, 0으로 둔다
-	int startX = 0;
-	int startY = 0;
+	int startX = rand() % WIDTH;
+	int startY = rand() % HEIGHT;
+	// 미로 생성을 시작할 지점을 랜덤으로 지정한다
 	q.push(make_pair(startX, startY));
 
 	do {
@@ -360,6 +345,23 @@ void ofApp::generateMaze() {
 
 	// 생성된 미로의 전체 그림을 char형으로 저장한다
 	saveMazeToChar();
+	makeImperfect();
+}
+
+void ofApp::makeImperfect()
+{
+	int wallToBreak = (HEIGHT > WIDTH ? HEIGHT : WIDTH);
+	while (wallToBreak) {
+		int wX = rand() % (HEIGHT * 2);
+		int wY = rand() % (WIDTH * 2);
+		if (wX == 0 || wY == 0)
+			continue;
+		if (mazeTxt[wY][wX] == '+' || mazeTxt[wY][wX] == ' ')
+			continue;
+		wallToBreak--;
+		mazeTxt[wY][wX] = ' ';
+	}
+
 }
 
 
@@ -446,7 +448,9 @@ void Ant::moveAnt()
 
 	// bfs 함수에서 기록해놓은 방문 순서를 거꾸로 따라가면서 다음 칸을 결정한다
 	int nextX = player.curX, nextY = player.curY;
-	while (1) {
+
+	// 방문 순서가 첫번재인 지점이 장애물의 다음 위치이다
+	while (visitNum[nextY][nextX] != 1) {
 		for (int i = 0; i < 4; i++) {
 			if (mazeTxt[nextY + dy[i]][nextX + dx[i]] != ' ')
 				continue;
@@ -457,9 +461,6 @@ void Ant::moveAnt()
 			nextY += dy[i];
 			break;
 		}
-
-		if (visitNum[nextY][nextX] == 1)
-			break;
 	}
 	curX = nextX;
 	curY = nextY;
