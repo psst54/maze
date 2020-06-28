@@ -42,7 +42,7 @@ class ofApp : public ofBaseApp{
 		void makeImperfect();
 
 		void generateMaze(int initX, int initY);		// 미로 생성을 할 때 제일 먼저 호출되는 함수이다
-									// 이 함수에서 위 함수들의 호출이 일어난다
+														// 이 함수에서 위 함수들의 호출이 일어난다
 
 
 		//------------미로 그리기에 필요한 변수들------------//
@@ -51,6 +51,10 @@ class ofApp : public ofBaseApp{
 
 		//------------미로 그리기에 필요한 함수------------//
 		void drawMaze();
+
+		//------------게임 플레이에 필요한 함수------------//
+		int NumOfAnt = 1, NumOfCoin = 1;
+		int score;
 };
 
 
@@ -68,7 +72,15 @@ public:
 	int curX, curY;
 	int visitNum[70][70];
 
-	void drawAnt(int size, int margin);
-	void moveAnt();
-	void bfs();
+	void drawAnt(int size, int margin, int antNum);
+	void moveAnt(int antNum);
+	void bfs(int antNum);
+};
+
+//------------코인의 정보를 저장하는 class------------//
+class Coin {
+public:
+	int curX, curY;
+
+	void drawCoin(int size, int margin, int coinNum);
 };

@@ -25,9 +25,9 @@ int WIDTH, HEIGHT;
 queue<pair<int, int> > q;
 
 
-Player player;		// player를 생성한다.
-Ant ant;			// 장애물을 생성한다.
-
+Player player;			// player를 생성한다.
+Ant ant[10];			// 장애물을 생성한다.
+Coin coin[20];			// 코인을 생성한다
 
 
 //--------------------------------------------------------------
@@ -37,23 +37,30 @@ void ofApp::setup() {
 
 //--------------------------------------------------------------
 void ofApp::update() {
-	// 도착점에 도착한 경우, 미로 그림을 지우고 gmaeEndFlag를 set한다
-	if (drawFlag && player.curX == WIDTH * 2 - 1 && player.curY == HEIGHT * 2 - 1) {
-		ofSleepMillis(500);		// 미로를 지우기 전에 잠시 멈춘다
-		gameEndFlag = true;
-		drawFlag = false;
-	}
-
 	// 장애물과 마주친 경우, 미로 그림을 지우고 gmaeEndFlag를 set한다
-	if (drawFlag && player.curX == ant.curX && player.curY == ant.curY) {
-		ofSleepMillis(500);		// 미로를 지우기 전에 잠시 멈춘다
-		gameEndFlag = true;
-		drawFlag = false;
-	}
+	for (int i = 0; i < NumOfAnt; i++)
+		if (drawFlag && player.curX == ant[i].curX && player.curY == ant[i].curY) {
+			ofSleepMillis(500);		// 미로를 지우기 전에 잠시 멈춘다
+			gameEndFlag = true;
+			drawFlag = false;
+		}
+
+	// 코인을 만난 경우, 점수를 올리고 다른 곳에 다시 그려준다
+	for (int i = 0; i < NumOfCoin; i++)
+		if (drawFlag && player.curX == coin[i].curX && player.curY == coin[i].curY) {
+			score += 100;
+
+			// 해당 코인의 위치를 다시 랜덤하게 배치해준다
+			coin[i].curX = (rand() % WIDTH) * 2 - 1;
+			coin[i].curY = (rand() % HEIGHT) * 2 - 1;
+
+			cout << "+100!\ncurrent score is " << score << "\n";
+		}
 
 	// 30프레임에 한번씩 장애물을 이동한다.
-	if (drawFlag && (ofGetFrameNum() % 10) == 0)
-		ant.moveAnt();
+	for (int i = 0; i < NumOfAnt; i++)
+		if (drawFlag && (ofGetFrameNum() % 10) == 0)
+			ant[i].moveAnt(i);
 } 
 
 //--------------------------------------------------------------
@@ -83,15 +90,24 @@ void ofApp::keyPressed(int key) {
 		player.curY = 1;
 
 		// 장애물의 시작점은 랜덤으로 정해진다
-		do {
-			ant.curX = (rand() % WIDTH) * 2 - 1;
-		} while (ant.curX <= 3); // 시작점과 너무 가깝지 않도록 조정한다
+		for (int i = 0; i < NumOfAnt; i++) {
+			do {
+				ant[i].curX = (rand() % WIDTH) * 2 - 1;
+			} while (ant[i].curX <= 3); // 시작점과 너무 가깝지 않도록 조정한다
 
-		do {
-			ant.curY = (rand() % HEIGHT) * 2 - 1;
-		} while (ant.curY <= 3); // 시작점과 너무 가깝지 않도록 조정한다
+			do {
+				ant[i].curY = (rand() % HEIGHT) * 2 - 1;
+			} while (ant[i].curY <= 3); // 시작점과 너무 가깝지 않도록 조정한다
+		}
+
+		// 코인의 위치도 랜덤으로 정해진다
+		for (int i = 0; i < NumOfCoin; i++) {
+			coin[i].curX = (rand() % WIDTH) * 2 - 1;
+			coin[i].curY = (rand() % HEIGHT) * 2 - 1;
+		}
 
 		drawFlag = true;
+		score = 0;
 	}
 
 	// h를 누르면 미로 크기 입력을 하지 않고 10 * 10 사이즈의 미로를 생성한다
@@ -106,15 +122,24 @@ void ofApp::keyPressed(int key) {
 		player.curY = 1;
 
 		// 장애물의 시작점은 랜덤으로 정해진다
-		do {
-			ant.curX = (rand() % WIDTH) * 2 - 1;
-		} while (ant.curX <= 1); // 시작점과 너무 가깝지 않도록 조정한다
+		for (int i = 0; i < NumOfAnt; i++) {
+			do {
+				ant[i].curX = (rand() % WIDTH) * 2 - 1;
+			} while (ant[i].curX <= 3); // 시작점과 너무 가깝지 않도록 조정한다
 
-		do {
-			ant.curY = (rand() % HEIGHT) * 2 - 1;
-		} while (ant.curY <= 1); // 시작점과 너무 가깝지 않도록 조정한다
+			do {
+				ant[i].curY = (rand() % HEIGHT) * 2 - 1;
+			} while (ant[i].curY <= 3); // 시작점과 너무 가깝지 않도록 조정한다
+		}
+
+		// 코인의 위치도 랜덤으로 정해진다
+		for (int i = 0; i < NumOfCoin; i++) {
+			coin[i].curX = (rand() % WIDTH) * 2 - 1;
+			coin[i].curY = (rand() % HEIGHT) * 2 - 1;
+		}
 
 		drawFlag = true;
+		score = 0;
 	}
 
 	//Q를 누르면 프로그램을 종료한다
@@ -375,7 +400,22 @@ void ofApp::generateMaze(int initX, int initY) {
 
 	// 생성된 미로의 전체 그림을 char형으로 저장한다
 	saveMazeToChar();
+	// 완전미로를 불완전미로로 바꾼다
 	makeImperfect();
+
+	// 장애물 개수는 가로/세로 길이 중 짧은 쪽을 3으로 나눈 몫이다.
+	// 값은 항상 자연수가 되도록 해준다.
+	NumOfAnt = (HEIGHT < WIDTH ? HEIGHT : WIDTH);
+	NumOfAnt /= 3;
+	if (NumOfAnt < 1)
+		NumOfAnt = 1;
+
+	// 코인 개수는 가로/세로 길이 중 긴 쪽을 3으로 나눈 몫이다.
+	// 값은 항상 자연수가 되도록 해준다.
+	NumOfCoin = (HEIGHT > WIDTH ? HEIGHT : WIDTH);
+	NumOfCoin /= 3;
+	if (NumOfCoin < 1)
+		NumOfCoin = 1;
 }
 
 void ofApp::makeImperfect()
@@ -421,12 +461,14 @@ void ofApp::drawMaze()
 		}
 	}
 
-	// 도착점에 흰색 원을 그린다
-	ofSetColor(255);
-	ofDrawCircle((WIDTH + 1) * 2 * cellSize, (HEIGHT + 1) * 2 * cellSize, cellSize / 2);
-	
+	// 플레이어를 그린다
 	player.drawPlayer(cellSize, margin);
-	ant.drawAnt(cellSize, margin);
+	// 장애물을 그린다
+	for (int i = 0; i < NumOfAnt; i++)
+		ant[i].drawAnt(cellSize, margin, i);
+	// 코인을 그린다
+	for (int i = 0; i < NumOfCoin; i++)
+		coin[i].drawCoin(cellSize, margin, i);
 }
 
 
@@ -454,12 +496,12 @@ void Player::drawPlayer(int size, int margin)
 }
 
 //--------------장애물을 그리는 함수이다-------------//
-void Ant::drawAnt(int size, int margin)
+void Ant::drawAnt(int size, int margin, int antNum)
 {
 	// drawPlayer에서 색만 바꾼 함수이다
 	ofRectangle rect;
-	rect.x = ant.curX * size + margin;
-	rect.y = ant.curY * size + margin;
+	rect.x = ant[antNum].curX * size + margin;
+	rect.y = ant[antNum].curY * size + margin;
 	rect.width = size;
 	rect.height = size;
 	int fr = ofGetFrameNum();
@@ -471,10 +513,10 @@ void Ant::drawAnt(int size, int margin)
 }
 
 //--------------장애물을 이동시키는 함수이다-------------//
-void Ant::moveAnt()
+void Ant::moveAnt(int antNum)
 {
 	// 장애물은 bfs의 결과값을 이용해 플레이어 방향으로 이동한다
-	ant.bfs();
+	ant[antNum].bfs(antNum);
 
 	// bfs 함수에서 기록해놓은 방문 순서를 거꾸로 따라가면서 다음 칸을 결정한다
 	int nextX = player.curX, nextY = player.curY;
@@ -498,7 +540,7 @@ void Ant::moveAnt()
 }
 
 //--------------장애물이 이동할 경로를 찾는 함수이다-------------//
-void Ant::bfs()
+void Ant::bfs(int antNum)
 {
 	//-------큐와 미로의 방문 정보를 초기화한다
 	for (int i = 0; i < HEIGHT * 2 + 1; i++) {
@@ -510,7 +552,7 @@ void Ant::bfs()
 		q.pop();
 	//-------------------------------------
 
-	int maze_x = ant.curX, maze_y = ant.curY;
+	int maze_x = ant[antNum].curX, maze_y = ant[antNum].curY;
 	q.push(make_pair(maze_x, maze_y));
 
 	while (1) {
@@ -538,4 +580,17 @@ void Ant::bfs()
 
 	while (!q.empty()) // 큐를 초기화한다
 		q.pop();
+}
+
+//--------------코인을 그리는 함수이다-------------//
+void Coin::drawCoin(int size, int margin, int coinNum)
+{
+	int fr = ofGetFrameNum();
+	if (fr % 20 < 10)
+		ofSetColor(0, 230, 190);
+	else
+		ofSetColor(0, 150, 160);
+
+	ofSetColor(255);
+	ofDrawCircle(coin[coinNum].curX * size + margin + size / 2, coin[coinNum].curY * size + margin + size / 2, size / 2);
 }
