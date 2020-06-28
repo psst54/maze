@@ -3,11 +3,14 @@
 #include "ofMain.h"
 
 #include <iostream>
-#include <cstdlib>
 #include <ctime>
 #include <queue>
-#include <fstream>
 #include <string>
+#include <vector>
+#include <map>
+#include <algorithm>
+using namespace std;
+using ii = pair<int, int>;
 
 class ofApp : public ofBaseApp{
 
@@ -38,15 +41,14 @@ class ofApp : public ofBaseApp{
 		void walk();				// 한 칸씩 이동하며 미로를 만든다
 		bool hunt();				// 아직 이어지지 않은 길이 있는 경우를 찾는다
 
-		void saveMazeToChar();
-		void makeImperfect();
+		void saveMazeToChar();		// 미로를 char 배열에 저장한다
+		void makeImperfect();		// 완전미로를 불완전미로로 바꾼다
 
 		void generateMaze(int initX, int initY);		// 미로 생성을 할 때 제일 먼저 호출되는 함수이다
 														// 이 함수에서 위 함수들의 호출이 일어난다
 
 
 		//------------미로 그리기에 필요한 변수들------------//
-		bool drawFlag = false, gameEndFlag = false;
 		int cellSize = 20, margin = 50;
 
 		//------------미로 그리기에 필요한 함수------------//
@@ -58,6 +60,9 @@ class ofApp : public ofBaseApp{
 
 		//------------게임 플레이에 필요한 함수------------//
 		void InitGame();
+
+		//------------랭크 시스템을 구현하는 함수------------//
+		void rank();
 };
 
 

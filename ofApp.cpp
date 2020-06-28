@@ -9,7 +9,6 @@ typedef struct _cell {
 	// 벽이 없는 경우 false
 	bool visited;	
 	// 방문한 경우 true
-	int num;
 } cell;
 
 // 미로 생성에 필요한 구조체이다. 각 칸의 상하좌우에 벽이 있는지, 방문한 칸인지를 저장한다
@@ -24,10 +23,54 @@ int WIDTH, HEIGHT;
 // 미로 생성, bfs에서 사용되는 큐이다
 queue<pair<int, int> > q;
 
+// 미로를 생성한 뒤부터 게임이 종료되기 전까지 drawFlag = true, 이외에는 flase이다
+bool drawFlag = false, gameEndFlag = false;
+
 
 Player player;			// player를 생성한다.
 Ant ant[10];			// 장애물을 생성한다.
 Coin coin[20];			// 코인을 생성한다
+
+
+// 각각 이름, 점수 / 점수, 이름 쌍의 이진탐색트리를 만든다
+map<string, int> nameidx;
+map<int, string> idxname;
+ 
+// N은 트리의 리프 노드의 개수를 저장한다. 
+// rank 함수에서 랭킹을 입력받음과 함께 N의 개수가 증가한다.
+int N;
+struct seg {
+	// lim은 리프 노드의 갯수보다 크거나 같은 2의 제곱수이다.
+	int lim;
+	vector<ii> tree;
+
+	// N보다 lim이 작을때, lim *= 2를 해준다.
+	void init(int N) {
+		for (lim = 1; lim <= N; lim <<= 1);
+		tree.resize(lim * 2 + 1);
+	}
+
+	void update(int i, int v) {
+		tree[i += lim] = { v,i };
+		i /= 2;
+		while (i) {
+			// i번 노드의 왼쪽 자식과 오른쪽 자식 중 큰 값을 i번 노드에 저장한다.
+			// 이 과정을 루트 노드까지 계속 반복하여 루트에 최대값이 오도록 업데이트한다. 
+			tree[i] = max(tree[i * 2], tree[i * 2 + 1]);
+			i /= 2;
+		}
+	}
+	ii mx() {
+		// 최대값을 반환한다. 위 업데이트의 과정으로 루트에 최대값이 저장되어 있다.
+		return tree[1];
+	}
+
+	// [] 연산자를 오버로딩한다. 
+	int operator[](int i) 
+	{ 
+		return tree[i + lim].first; 
+	}
+} seg;
 
 
 //--------------------------------------------------------------
@@ -59,21 +102,29 @@ void ofApp::update() {
 				coin[i].curY = (rand() % HEIGHT) * 2 - 1;
 			}
 
-			cout << "+100!\ncurrent score is " << score << "\n";
+			cout << "+100\n";
 		}
 
-	// 30프레임에 한번씩 장애물을 이동한다.
+	// 10프레임마다 장애물을 이동한다.
 	for (int i = 0; i < NumOfAnt; i++)
 		if (drawFlag && (ofGetFrameNum() % 10) == 0)
 			ant[i].moveAnt(i);
+
+	// 게임이 종료되어 gameEndFlag가 true인 경우에, 
+	// rank 함수를 호출해 랭크 정보를 읽거나 저장한다.
+	if (gameEndFlag) {
+		rank();
+	}
 } 
 
 //--------------------------------------------------------------
 void ofApp::draw() {
+	// 미로 위에 항상 
 	ofTrueTypeFont myfont;
 	myfont.load("arial.ttf", 15);
 	ofSetColor(100);
-	myfont.drawString("Press n to generate new maze", 20, 20);
+	myfont.drawString("Press N to generate new maze", 20, 20);
+	myfont.drawString("Press H to generate new 10x10 maze", 20, 40);
 
 	// 미로가 생성된 경우 drawFlag가 true이고, 그 경우에 미로를 그린다
 	if (drawFlag) {
@@ -209,15 +260,6 @@ void ofApp::saveMazeToChar()
 				mazeTxt[i * 2][j * 2 - 1] = ' ';
 		}
 	}
-
-
-	/*printf("\n\n");
-	for (int i = 0; i < HEIGHT * 2 + 1; i++) {
-		for (int j = 0; j < WIDTH * 2 + 1; j++) {
-			printf("%c", mazeTxt[i][j]);
-		}
-		printf("\n");
-	}*/
 }
 
 
@@ -361,22 +403,9 @@ void ofApp::generateMaze(int initX, int initY) {
 	saveMazeToChar();
 	// 완전미로를 불완전미로로 바꾼다
 	makeImperfect();
-
-	// 장애물 개수는 가로/세로 길이 중 짧은 쪽을 3으로 나눈 몫이다.
-	// 값은 항상 자연수가 되도록 해준다.
-	NumOfAnt = (HEIGHT < WIDTH ? HEIGHT : WIDTH);
-	NumOfAnt /= 3;
-	if (NumOfAnt < 1)
-		NumOfAnt = 1;
-
-	// 코인 개수는 가로/세로 길이 중 긴 쪽을 3으로 나눈 몫이다.
-	// 값은 항상 자연수가 되도록 해준다.
-	NumOfCoin = (HEIGHT > WIDTH ? HEIGHT : WIDTH);
-	NumOfCoin /= 3;
-	if (NumOfCoin < 1)
-		NumOfCoin = 1;
 }
 
+//--------------완전미로를 불완전미로로 바꾼다-------------//
 void ofApp::makeImperfect()
 {
 	int wallToBreak = (HEIGHT > WIDTH ? HEIGHT : WIDTH);
@@ -390,7 +419,6 @@ void ofApp::makeImperfect()
 		wallToBreak--;
 		mazeTxt[wY][wX] = ' ';
 	}
-
 }
 
 //--------------미로를 그리는 함수이다-------------//
@@ -436,6 +464,13 @@ void ofApp::InitGame()
 	player.curX = 1;
 	player.curY = 1;
 
+	// 장애물 개수는 가로/세로 길이 중 짧은 쪽을 3으로 나눈 몫이다.
+	// 값은 항상 자연수가 되도록 해준다.
+	NumOfAnt = (HEIGHT < WIDTH ? HEIGHT : WIDTH);
+	NumOfAnt /= 3;
+	if (NumOfAnt < 1)
+		NumOfAnt = 1;
+
 	// 장애물의 시작점은 랜덤으로 정해진다
 	for (int i = 0; i < NumOfAnt; i++) {
 		do {
@@ -446,6 +481,14 @@ void ofApp::InitGame()
 			ant[i].curY = (rand() % HEIGHT) * 2 - 1;
 		} while (ant[i].curY <= 3); // 시작점과 너무 가깝지 않도록 조정한다
 	}
+
+	// 코인 개수는 가로/세로 길이 중 긴 쪽을 3으로 나눈 몫이다.
+	// 값은 항상 자연수가 되도록 해준다.
+	NumOfCoin = (HEIGHT > WIDTH ? HEIGHT : WIDTH);
+	NumOfCoin /= 3;
+	if (NumOfCoin < 1)
+		NumOfCoin = 1;
+
 	// 코인의 위치도 랜덤으로 정해진다
 	for (int i = 0; i < NumOfCoin; i++) {
 		coin[i].curX = (rand() % WIDTH) * 2 - 1;
@@ -457,8 +500,6 @@ void ofApp::InitGame()
 			coin[i].curX = (rand() % WIDTH) * 2 - 1;
 			coin[i].curY = (rand() % HEIGHT) * 2 - 1;
 		}
-
-		cout << coin[i].curX << ' ' << coin[i].curY << '\n';
 	}
 
 	drawFlag = true;
@@ -590,4 +631,56 @@ void Coin::drawCoin(int size, int margin, int coinNum)
 
 	ofSetColor(255);
 	ofDrawCircle(coin[coinNum].curX * size + margin + size / 2, coin[coinNum].curY * size + margin + size / 2, size / 2);
+}
+
+
+
+void ofApp::rank()
+{
+	string s;
+	int x, op;
+	seg.init(100000);
+
+	// s에는 입력받은 이름을, x에는 점수를 저장한다
+	cout << "\nEnter name : ";
+	cin >> s;
+	x = score;
+
+	// nameidx에서 같은 이름을 발견한 경우, 기존 정보를 업데이트한다
+	if (nameidx.find(s) != nameidx.end()) {
+		int idx = nameidx[s];
+		if (seg[idx] < x) {
+			seg.update(idx, x);
+			cout << "User's information has been updated\n";
+		}
+	}
+	// nameidx에 같은 이름이 없는 경우, 새로운 정보이므로 N - 1번째로 삽입한다
+	else {
+		seg.update(nameidx[s] = N, x);
+		idxname[N++] = s;
+		cout << "User's information has been inserted\n";
+	}
+
+	// 1을 입력받은 경우에는 랭크 전체를 출력한다
+	// 나머지 숫자키를 입력받은 경우에는 다시 빈 화면으로 돌아간다
+	while (1) {
+		cout << "Press 1 to show the list or Press any number to return to main\n";
+		cin >> op;
+		if (op == 1) {
+			for (int i = 0; i < N; i++) {
+				ii ret = seg.mx();
+				cout << i + 1 << ". " << idxname[ret.second] << '\t' << ret.first << '\n';
+				int v = seg[ret.second];
+				seg.update(ret.second, -v);
+			}
+			for (int i = 0; i < N; i++) {
+				int v = seg[i];
+				seg.update(i, -v);
+			}
+		}
+		else break;
+	}
+
+	// update에서 다시 rank 함수를 호출하지 않도록 gameEndFlag = false로 설정한다
+	gameEndFlag = false;
 }
