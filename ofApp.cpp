@@ -53,6 +53,11 @@ void ofApp::update() {
 			// 해당 코인의 위치를 다시 랜덤하게 배치해준다
 			coin[i].curX = (rand() % WIDTH) * 2 - 1;
 			coin[i].curY = (rand() % HEIGHT) * 2 - 1;
+			while ((coin[i].curX == player.curX && coin[i].curY == player.curY)
+				|| coin[i].curX < 0 || coin[i].curY < 0) {
+				coin[i].curX = (rand() % WIDTH) * 2 - 1;
+				coin[i].curY = (rand() % HEIGHT) * 2 - 1;
+			}
 
 			cout << "+100!\ncurrent score is " << score << "\n";
 		}
@@ -80,66 +85,20 @@ void ofApp::draw() {
 void ofApp::keyPressed(int key) {
 	// n을 누르면 새 미로를 만들 수 있다
 	if (key == 'N' || key == 'n') {
-		cout << "GENERATE NEW MAZE!\n";
+		cout << "\nGENERATE NEW MAZE!\n";
 		
 		//미로 생성 함수를 호출한다
 		generateMaze(0, 0);
-		
-		// 플레이어의 시작점은 좌측 상단이다
-		player.curX = 1;
-		player.curY = 1;
-
-		// 장애물의 시작점은 랜덤으로 정해진다
-		for (int i = 0; i < NumOfAnt; i++) {
-			do {
-				ant[i].curX = (rand() % WIDTH) * 2 - 1;
-			} while (ant[i].curX <= 3); // 시작점과 너무 가깝지 않도록 조정한다
-
-			do {
-				ant[i].curY = (rand() % HEIGHT) * 2 - 1;
-			} while (ant[i].curY <= 3); // 시작점과 너무 가깝지 않도록 조정한다
-		}
-
-		// 코인의 위치도 랜덤으로 정해진다
-		for (int i = 0; i < NumOfCoin; i++) {
-			coin[i].curX = (rand() % WIDTH) * 2 - 1;
-			coin[i].curY = (rand() % HEIGHT) * 2 - 1;
-		}
-
-		drawFlag = true;
-		score = 0;
+		InitGame();
 	}
 
 	// h를 누르면 미로 크기 입력을 하지 않고 10 * 10 사이즈의 미로를 생성한다
 	if (key == 'H' || key == 'h') {
-		cout << "GENERATE 15x15 MAZE!\n";
+		cout << "\nGENERATE 15x15 MAZE!\n";
 
 		//미로 생성 함수를 호출한다
 		generateMaze(10, 10);
-
-		// 플레이어의 시작점은 좌측 상단이다
-		player.curX = 1;
-		player.curY = 1;
-
-		// 장애물의 시작점은 랜덤으로 정해진다
-		for (int i = 0; i < NumOfAnt; i++) {
-			do {
-				ant[i].curX = (rand() % WIDTH) * 2 - 1;
-			} while (ant[i].curX <= 3); // 시작점과 너무 가깝지 않도록 조정한다
-
-			do {
-				ant[i].curY = (rand() % HEIGHT) * 2 - 1;
-			} while (ant[i].curY <= 3); // 시작점과 너무 가깝지 않도록 조정한다
-		}
-
-		// 코인의 위치도 랜덤으로 정해진다
-		for (int i = 0; i < NumOfCoin; i++) {
-			coin[i].curX = (rand() % WIDTH) * 2 - 1;
-			coin[i].curY = (rand() % HEIGHT) * 2 - 1;
-		}
-
-		drawFlag = true;
-		score = 0;
+		InitGame();
 	}
 
 	//Q를 누르면 프로그램을 종료한다
@@ -434,7 +393,6 @@ void ofApp::makeImperfect()
 
 }
 
-
 //--------------미로를 그리는 함수이다-------------//
 void ofApp::drawMaze()
 {
@@ -470,6 +428,45 @@ void ofApp::drawMaze()
 	for (int i = 0; i < NumOfCoin; i++)
 		coin[i].drawCoin(cellSize, margin, i);
 }
+
+//-------------게임의 초기값을 결정하는 함수이다-------------//
+void ofApp::InitGame()
+{
+	// 플레이어의 시작점은 좌측 상단이다
+	player.curX = 1;
+	player.curY = 1;
+
+	// 장애물의 시작점은 랜덤으로 정해진다
+	for (int i = 0; i < NumOfAnt; i++) {
+		do {
+			ant[i].curX = (rand() % WIDTH) * 2 - 1;
+		} while (ant[i].curX <= 3); // 시작점과 너무 가깝지 않도록 조정한다
+
+		do {
+			ant[i].curY = (rand() % HEIGHT) * 2 - 1;
+		} while (ant[i].curY <= 3); // 시작점과 너무 가깝지 않도록 조정한다
+	}
+	// 코인의 위치도 랜덤으로 정해진다
+	for (int i = 0; i < NumOfCoin; i++) {
+		coin[i].curX = (rand() % WIDTH) * 2 - 1;
+		coin[i].curY = (rand() % HEIGHT) * 2 - 1;
+
+		// 플레이어의 현위치에는 코인이 생기지 않도록 한다
+		while ((coin[i].curX == player.curX && coin[i].curY == player.curY) 
+			|| coin[i].curX < 0 || coin[i].curY < 0) {
+			coin[i].curX = (rand() % WIDTH) * 2 - 1;
+			coin[i].curY = (rand() % HEIGHT) * 2 - 1;
+		}
+
+		cout << coin[i].curX << ' ' << coin[i].curY << '\n';
+	}
+
+	drawFlag = true;
+	score = 0;
+}
+
+
+
 
 
 //--------------플레이어를 그리는 함수이다-------------//

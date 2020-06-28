@@ -52,27 +52,36 @@ class ofApp : public ofBaseApp{
 		//------------미로 그리기에 필요한 함수------------//
 		void drawMaze();
 
-		//------------게임 플레이에 필요한 함수------------//
+		//------------게임 플레이에 필요한 변수------------//
 		int NumOfAnt = 1, NumOfCoin = 1;
 		int score;
+
+		//------------게임 플레이에 필요한 함수------------//
+		void InitGame();
 };
 
 
 //------------플레이어의 정보를 저장하는 class------------//
 class Player {
 public:
+	// 플레이어의 x, y좌표를 저장한다
 	int curX, curY;
 
+	// 플레이어의 위치를 그린다
 	void drawPlayer(int size, int margin);
 };
 
 //------------장애물의 정보를 저장하는 class------------//
 class Ant {
 public:
+	// 장애물의 x, y좌표를 저장한다
 	int curX, curY;
+	// bfs에서 방문 정보를 저장하기 위해 사용하는 배열이다
 	int visitNum[70][70];
 
+	// 장애물의 위치를 그린다
 	void drawAnt(int size, int margin, int antNum);
+	// bfs를 통해 장애물이 움직일 곳을 정하고, 그 방향으로 움직인다
 	void moveAnt(int antNum);
 	void bfs(int antNum);
 };
@@ -80,7 +89,9 @@ public:
 //------------코인의 정보를 저장하는 class------------//
 class Coin {
 public:
+	// 코인의 x, y좌표를 저장한다
 	int curX, curY;
 
+	// 코인의 위치를 그린다
 	void drawCoin(int size, int margin, int coinNum);
 };
