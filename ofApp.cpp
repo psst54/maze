@@ -76,8 +76,31 @@ void ofApp::keyPressed(int key) {
 		cout << "GENERATE NEW MAZE!\n";
 		
 		//미로 생성 함수를 호출한다
-		generateMaze();
+		generateMaze(0, 0);
 		
+		// 플레이어의 시작점은 좌측 상단이다
+		player.curX = 1;
+		player.curY = 1;
+
+		// 장애물의 시작점은 랜덤으로 정해진다
+		do {
+			ant.curX = (rand() % WIDTH) * 2 - 1;
+		} while (ant.curX <= 3); // 시작점과 너무 가깝지 않도록 조정한다
+
+		do {
+			ant.curY = (rand() % HEIGHT) * 2 - 1;
+		} while (ant.curY <= 3); // 시작점과 너무 가깝지 않도록 조정한다
+
+		drawFlag = true;
+	}
+
+	// h를 누르면 미로 크기 입력을 하지 않고 10 * 10 사이즈의 미로를 생성한다
+	if (key == 'H' || key == 'h') {
+		cout << "GENERATE 15x15 MAZE!\n";
+
+		//미로 생성 함수를 호출한다
+		generateMaze(10, 10);
+
 		// 플레이어의 시작점은 좌측 상단이다
 		player.curX = 1;
 		player.curY = 1;
@@ -310,18 +333,25 @@ bool ofApp::hunt()
 	return false;
 }
 
-void ofApp::generateMaze() {
+void ofApp::generateMaze(int initX, int initY) {
 	srand(time(NULL));
 
-	// 미로의 크기는 2 이상 30 이하로 제한한다
+	// 미로의 크기는 5 이상 30 이하로 제한한다
 	// 더 큰 미로를 만들고 싶다면 mazeInfo, mazeTxt, visitNum의 배열 크기를 늘리고 cellSize를 조정한다
-	do {
-		cout << "2 <= WIDTH <= 30, 2 <= HEIGHT <= 30\n";
-		cout << "WIDTH : ";
-		cin >> WIDTH;
-		cout << "HEIGHT : ";
-		cin >> HEIGHT;
-	} while (WIDTH < 2 || WIDTH > 30 || HEIGHT < 2 || HEIGHT > 30);
+	if (initX == 0 && initY == 0) {
+		do {
+			cout << "5 <= WIDTH <= 30, 5 <= HEIGHT <= 30\n";
+			cout << "WIDTH : ";
+			cin >> WIDTH;
+			cout << "HEIGHT : ";
+			cin >> HEIGHT;
+		} while (WIDTH < 5 || WIDTH > 30 || HEIGHT < 5 || HEIGHT > 30);
+	}
+	else {
+		WIDTH = initX;
+		HEIGHT = initY;
+	}
+	
 
 	for (int i = 0; i < HEIGHT; i++) {
 		for (int j = 0; j < WIDTH; j++) {

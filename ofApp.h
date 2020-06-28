@@ -41,7 +41,7 @@ class ofApp : public ofBaseApp{
 		void saveMazeToChar();
 		void makeImperfect();
 
-		void generateMaze();		// 미로 생성을 할 때 제일 먼저 호출되는 함수이다
+		void generateMaze(int initX, int initY);		// 미로 생성을 할 때 제일 먼저 호출되는 함수이다
 									// 이 함수에서 위 함수들의 호출이 일어난다
 
 
